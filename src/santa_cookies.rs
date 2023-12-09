@@ -1,14 +1,43 @@
-use axum::{http::HeaderMap, routing::get, Router};
+use std::collections::HashMap;
+
+use axum::{
+    http::{header::COOKIE, HeaderMap, HeaderValue},
+    routing::get,
+    Router,
+};
 use base64::prelude::*;
 
-async fn get_encoded_cookies_recipe(headers: HeaderMap) -> Result<String, String> {
-    let cookie = headers.get("cookie").ok_or("A cookie is expected")?;
-    let recipe = cookie.as_bytes().splitn(2, |&v| v == b'=').last().unwrap();
+fn get_cookies_map(headers: &HeaderMap) -> Result<HashMap<String, HeaderValue>, String> {
+    let cookies = headers.get_all(COOKIE);
+    if cookies.iter().count() == 0 {
+        return Err("Cookies are empty".into());
+    }
 
-    let decode_recipe = BASE64_STANDARD
-        .decode(recipe)
+    let mut map = HashMap::new();
+
+    cookies
+        .into_iter()
+        .flat_map(|value| value.as_bytes().split(|v| v == &b';').collect::<Vec<_>>())
+        .map(|cookie| cookie.splitn(2, |&v| v == b'=').collect::<Vec<_>>())
+        .for_each(|cookie| {
+            map.insert(
+                String::from_utf8(cookie[0].into()).unwrap(),
+                HeaderValue::from_bytes(cookie[1]).unwrap(),
+            );
+        });
+
+    Ok(map)
+}
+
+async fn get_encoded_cookies_recipe(headers: HeaderMap) -> Result<String, String> {
+    let cookies = get_cookies_map(&headers)?;
+    let encode_recipe = cookies.get("recipe").ok_or("Missing cookie")?;
+
+    let raw_recipe = BASE64_STANDARD
+        .decode(encode_recipe)
         .map_err(|_| "The recipe cookie is not valid")?;
-    let decode_recipe = String::from_utf8(decode_recipe).unwrap();
+
+    let decode_recipe = String::from_utf8(raw_recipe).unwrap();
 
     Ok(decode_recipe)
 }
