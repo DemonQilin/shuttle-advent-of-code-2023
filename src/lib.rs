@@ -1,3 +1,4 @@
+pub mod cookies_recipe;
 pub mod hidden_elves;
 mod reindeer;
 mod sled;
