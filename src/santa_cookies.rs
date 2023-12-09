@@ -117,6 +117,27 @@ async fn get_encoded_cookies_recipe(headers: HeaderMap) -> Result<String, String
     Ok(decode_recipe)
 }
 
+async fn get_baked_cookies(headers: HeaderMap) -> Result<String, String> {
+    let cookies = get_cookies_map(&headers)?;
+    let encode_recipe = cookies.get("recipe").ok_or("Missing cookie")?;
+
+    let raw_recipe = BASE64_STANDARD
+        .decode(encode_recipe)
+        .map_err(|_| "Invalid value for recipe cookie")?;
+
+    let decode_recipe = String::from_utf8(raw_recipe)
+        .unwrap()
+        .replace("baking powder", "baking_powder")
+        .replace("chocolate chips", "chocolate_chips");
+
+    let recipe = serde_json::from_str::<Recipe>(&decode_recipe)
+        .map_err(|_| "Object does not have the correct shape")?;
+
+    serde_json::to_string(&recipe.bake()).map_err(|_| "Unexpected failure".into())
+}
+
 pub fn get_cookies_recipe_routes() -> Router {
-    Router::new().route("/decode", get(get_encoded_cookies_recipe))
+    Router::new()
+        .route("/decode", get(get_encoded_cookies_recipe))
+        .route("/bake", get(get_baked_cookies))
 }
