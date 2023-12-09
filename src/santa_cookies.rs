@@ -1,82 +1,58 @@
 use axum::{
     http::{header::COOKIE, HeaderMap, HeaderValue},
     routing::get,
-    Router,
+    Json, Router,
 };
 use base64::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use std::{
-    collections::HashMap,
-    ops::{Mul, Sub},
-};
+use std::collections::HashMap;
 
-#[derive(Debug, Deserialize, Serialize)]
-struct Ingredients {
-    flour: u32,
-    sugar: u32,
-    butter: u32,
-    baking_powder: u32,
-    chocolate_chips: u32,
+#[derive(Debug, Deserialize)]
+struct Order {
+    recipe: HashMap<String, u32>,
+    pantry: HashMap<String, u32>,
 }
 
 #[derive(Debug, Serialize)]
-struct RecipeResult {
+struct OrderResponse {
     cookies: u32,
-    pantry: Ingredients,
+    pantry: HashMap<String, u32>,
 }
 
-#[derive(Debug, Deserialize)]
-struct Recipe {
-    recipe: Ingredients,
-    pantry: Ingredients,
-}
+impl Order {
+    fn bake(self) -> OrderResponse {
+        let cookies_total = self
+            .recipe
+            .iter()
+            .flat_map(|(ingredient, recipe_quantity)| {
+                self.pantry
+                    .get(ingredient)
+                    .map(|pantry_quantity| pantry_quantity / recipe_quantity)
+            })
+            .min()
+            .unwrap_or(0);
 
-impl Sub for Ingredients {
-    type Output = Ingredients;
+        let remain = self.pantry.into_iter().fold(
+            HashMap::new(),
+            move |mut acc, (ingredient, pantry_quantity)| {
+                let recipe_quantity = self.recipe.get(&ingredient);
 
-    fn sub(self, rhs: Self) -> Self::Output {
-        Self {
-            flour: self.flour - rhs.flour,
-            sugar: self.sugar - rhs.sugar,
-            butter: self.butter - rhs.butter,
-            baking_powder: self.baking_powder - rhs.baking_powder,
-            chocolate_chips: self.chocolate_chips - rhs.chocolate_chips,
-        }
-    }
-}
+                if let Some(recipe_quantity) = recipe_quantity {
+                    acc.insert(
+                        ingredient,
+                        pantry_quantity - cookies_total * recipe_quantity,
+                    );
+                } else {
+                    acc.insert(ingredient, pantry_quantity);
+                }
 
-impl Mul<u32> for Ingredients {
-    type Output = Self;
+                acc
+            },
+        );
 
-    fn mul(self, rhs: u32) -> Self::Output {
-        Self {
-            flour: self.flour * rhs,
-            sugar: self.sugar * rhs,
-            butter: self.butter * rhs,
-            baking_powder: self.baking_powder * rhs,
-            chocolate_chips: self.chocolate_chips * rhs,
-        }
-    }
-}
-
-impl Recipe {
-    fn bake(self) -> RecipeResult {
-        let total_cookies = *[
-            self.pantry.flour / self.recipe.flour,
-            self.pantry.sugar / self.recipe.sugar,
-            self.pantry.butter / self.recipe.butter,
-            self.pantry.baking_powder / self.recipe.baking_powder,
-            self.pantry.chocolate_chips / self.recipe.chocolate_chips,
-        ]
-        .iter()
-        .min()
-        .unwrap();
-
-        let remain = self.pantry - (self.recipe * total_cookies);
-
-        RecipeResult {
-            cookies: total_cookies,
+        OrderResponse {
+            cookies: cookies_total,
             pantry: remain,
         }
     }
@@ -117,7 +93,7 @@ async fn get_encoded_cookies_recipe(headers: HeaderMap) -> Result<String, String
     Ok(decode_recipe)
 }
 
-async fn get_baked_cookies(headers: HeaderMap) -> Result<String, String> {
+async fn get_baked_cookies(headers: HeaderMap) -> Result<Json<OrderResponse>, String> {
     let cookies = get_cookies_map(&headers)?;
     let encode_recipe = cookies.get("recipe").ok_or("Missing cookie")?;
 
@@ -125,15 +101,10 @@ async fn get_baked_cookies(headers: HeaderMap) -> Result<String, String> {
         .decode(encode_recipe)
         .map_err(|_| "Invalid value for recipe cookie")?;
 
-    let decode_recipe = String::from_utf8(raw_recipe)
-        .unwrap()
-        .replace("baking powder", "baking_powder")
-        .replace("chocolate chips", "chocolate_chips");
+    let recipe = serde_json::from_slice::<Order>(&raw_recipe)
+        .map_err(|_| "Order does not have the correct shape")?;
 
-    let recipe = serde_json::from_str::<Recipe>(&decode_recipe)
-        .map_err(|_| "Object does not have the correct shape")?;
-
-    serde_json::to_string(&recipe.bake()).map_err(|_| "Unexpected failure".into())
+    Ok(Json(recipe.bake()))
 }
 
 pub fn get_cookies_recipe_routes() -> Router {
