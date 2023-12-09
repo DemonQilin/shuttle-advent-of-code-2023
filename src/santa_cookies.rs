@@ -58,7 +58,9 @@ impl Order {
     }
 }
 
-fn get_cookies_map(headers: &HeaderMap) -> Result<HashMap<String, HeaderValue>, String> {
+fn get_cookies_map(
+    headers: &HeaderMap,
+) -> axum::response::Result<HashMap<String, HeaderValue>, String> {
     let cookies = headers.get_all(COOKIE);
     if cookies.iter().count() == 0 {
         return Err("Cookies are empty".into());
@@ -80,7 +82,7 @@ fn get_cookies_map(headers: &HeaderMap) -> Result<HashMap<String, HeaderValue>, 
     Ok(map)
 }
 
-async fn get_encoded_cookies_recipe(headers: HeaderMap) -> Result<String, String> {
+async fn get_encoded_cookies_recipe(headers: HeaderMap) -> axum::response::Result<String, String> {
     let cookies = get_cookies_map(&headers)?;
     let encode_recipe = cookies.get("recipe").ok_or("Missing cookie")?;
 
@@ -93,7 +95,9 @@ async fn get_encoded_cookies_recipe(headers: HeaderMap) -> Result<String, String
     Ok(decode_recipe)
 }
 
-async fn get_baked_cookies(headers: HeaderMap) -> Result<Json<OrderResponse>, String> {
+async fn get_baked_cookies(
+    headers: HeaderMap,
+) -> axum::response::Result<Json<OrderResponse>, String> {
     let cookies = get_cookies_map(&headers)?;
     let encode_recipe = cookies.get("recipe").ok_or("Missing cookie")?;
 

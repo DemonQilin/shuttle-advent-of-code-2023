@@ -1,6 +1,6 @@
 use axum::{extract::Path, http::StatusCode, routing::get, Router};
 
-async fn sled_id(Path(packed_ids): Path<String>) -> Result<String, StatusCode> {
+async fn sled_id(Path(packed_ids): Path<String>) -> axum::response::Result<String, StatusCode> {
     let mut packed_ids = packed_ids;
 
     if packed_ids.ends_with('/') {

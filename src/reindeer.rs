@@ -64,7 +64,7 @@ async fn get_reideers_total_strength(Json(reindeers): Json<Vec<Reindeer>>) -> St
         .to_string()
 }
 
-async fn get_contest_winners(body: String) -> Result<String, StatusCode> {
+async fn get_contest_winners(body: String) -> axum::response::Result<String, StatusCode> {
     let body = body.replace("cAnD13s_3ATeN-yesT3rdAy", "candies_eaten");
     let reindeers: Vec<DetailReindeer> =
         serde_json::from_str(&body).map_err(|_| StatusCode::BAD_REQUEST)?;
