@@ -1,3 +1,4 @@
+pub mod hidden_elves;
 mod reindeer;
 mod sled;
 
