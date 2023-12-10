@@ -13,9 +13,31 @@ struct Pokemon {
 struct Hectogram(u16);
 struct Kilogram(u16);
 
+struct Newton {
+    mass: Kilogram,
+    acceleration: f32,
+}
+
+struct Joul {
+    force: Newton,
+    duration: f32,
+}
+
 impl Hectogram {
     fn to_kilogram(&self) -> Kilogram {
         Kilogram(self.0 / 10)
+    }
+}
+
+impl Newton {
+    fn value(&self) -> f32 {
+        self.acceleration * self.mass.0 as f32
+    }
+}
+
+impl Joul {
+    fn value(&self) -> f32 {
+        self.force.value() * self.duration
     }
 }
 
