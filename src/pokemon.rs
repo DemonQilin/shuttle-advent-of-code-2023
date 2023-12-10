@@ -1,6 +1,8 @@
 use axum::{extract::Path, http::StatusCode, routing::get, Router};
 use serde::Deserialize;
 
+const GRAVITATIONAL_ACCELERATION: f32 = 9.825;
+
 #[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 struct Pokemon {
@@ -21,6 +23,19 @@ struct Newton {
 struct Joul {
     force: Newton,
     duration: f32,
+}
+
+impl Pokemon {
+    fn momentum(&self, distance: f32) -> Joul {
+        let kilo_weigth = self.weight.to_kilogram();
+        let duration = (distance * 2.0 / GRAVITATIONAL_ACCELERATION).sqrt();
+        let force = Newton {
+            mass: kilo_weigth,
+            acceleration: GRAVITATIONAL_ACCELERATION,
+        };
+
+        Joul { force, duration }
+    }
 }
 
 impl Hectogram {
