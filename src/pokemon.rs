@@ -77,6 +77,29 @@ async fn get_pokemon_weight(Path(pokemon_id): Path<u16>) -> (StatusCode, String)
     (StatusCode::OK, kilo_weight.to_string())
 }
 
+async fn get_drop_momentum(Path(pokemon_id): Path<u16>) -> (StatusCode, String) {
+    let url = format!("https://pokeapi.co/api/v2/pokemon/{pokemon_id}");
+    let res = reqwest::get(url).await;
+    if let Err(e) = res {
+        if e.is_request() {
+            let msg = format!("The request for pokemon {pokemon_id} failed");
+            return (StatusCode::NOT_FOUND, msg);
+        }
+
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Something went wrong".into(),
+        );
+    }
+
+    let pokemon = res.unwrap().json::<Pokemon>().await.unwrap();
+    let momentum = pokemon.momentum(10.0).value();
+
+    (StatusCode::OK, momentum.to_string())
+}
+
 pub fn get_pokemon_routes() -> Router {
-    Router::new().route("/weight/:pokemon_id", get(get_pokemon_weight))
+    Router::new()
+        .route("/weight/:pokemon_id", get(get_pokemon_weight))
+        .route("/drop/:pokemon_id", get(get_drop_momentum))
 }
