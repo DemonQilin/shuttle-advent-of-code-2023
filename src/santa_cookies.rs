@@ -10,14 +10,14 @@ use std::collections::HashMap;
 
 #[derive(Debug, Deserialize)]
 struct Order {
-    recipe: HashMap<String, u32>,
-    pantry: HashMap<String, u32>,
+    recipe: HashMap<String, u64>,
+    pantry: HashMap<String, u64>,
 }
 
 #[derive(Debug, Serialize)]
 struct OrderResponse {
-    cookies: u32,
-    pantry: HashMap<String, u32>,
+    cookies: u64,
+    pantry: HashMap<String, u64>,
 }
 
 impl Order {
@@ -25,6 +25,7 @@ impl Order {
         let cookies_total = self
             .recipe
             .iter()
+            .filter(|(_, &recipe_quantity)| recipe_quantity != 0)
             .flat_map(|(ingredient, recipe_quantity)| {
                 self.pantry
                     .get(ingredient)
@@ -108,7 +109,9 @@ async fn get_baked_cookies(
     let recipe = serde_json::from_slice::<Order>(&raw_recipe)
         .map_err(|_| "Order does not have the correct shape")?;
 
-    Ok(Json(recipe.bake()))
+    let remain = recipe.bake();
+
+    Ok(Json(remain))
 }
 
 pub fn get_cookies_recipe_routes() -> Router {
