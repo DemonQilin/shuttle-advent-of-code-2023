@@ -12,8 +12,8 @@ struct Pokemon {
 }
 
 #[derive(Debug, Deserialize)]
-struct Hectogram(u16);
-struct Kilogram(u16);
+struct Hectogram(f32);
+struct Kilogram(f32);
 
 struct Newton {
     mass: Kilogram,
@@ -40,13 +40,13 @@ impl Pokemon {
 
 impl Hectogram {
     fn to_kilogram(&self) -> Kilogram {
-        Kilogram(self.0 / 10)
+        Kilogram(self.0 / 10.0)
     }
 }
 
 impl Newton {
     fn value(&self) -> f32 {
-        self.acceleration * self.mass.0 as f32
+        self.acceleration * self.mass.0
     }
 }
 
