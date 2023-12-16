@@ -1,8 +1,8 @@
 use axum::{http::StatusCode, routing::get, Router};
 
 use cch23_demonqilin01::{
-    get_cookies_recipe_routes, get_hidden_elves_routes, get_pokemon_routes, get_reindeer_routes,
-    get_sled_routes,
+    get_cookies_recipe_routes, get_hidden_elves_routes, get_imagery_routes, get_pokemon_routes,
+    get_reindeer_routes, get_sled_routes,
 };
 
 async fn hello_world() -> &'static str {
@@ -22,7 +22,8 @@ async fn main() -> shuttle_axum::ShuttleAxum {
         .nest("/4", get_reindeer_routes())
         .nest("/6", get_hidden_elves_routes())
         .nest("/7", get_cookies_recipe_routes())
-        .nest("/8", get_pokemon_routes());
+        .nest("/8", get_pokemon_routes())
+        .nest("/11", get_imagery_routes());
 
     Ok(router.into())
 }
