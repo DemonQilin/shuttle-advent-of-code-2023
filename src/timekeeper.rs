@@ -7,6 +7,7 @@ use std::{
 use axum::{
     extract::{Path, State},
     routing::{get, post},
+    Router,
 };
 use reqwest::StatusCode;
 
@@ -35,4 +36,13 @@ async fn save_packet(State(timekeeper): State<Timekeeper>, Path(packet_key): Pat
     let now = Instant::now();
 
     timekeeper.insert(packet_key, now);
+}
+
+pub fn make_timekeeper_api() -> Router {
+    let timekeeper: Timekeeper = Arc::new(Mutex::new(HashMap::new()));
+
+    Router::new()
+        .route("/save/:packet_key", post(save_packet))
+        .route("/load/:packet_key", get(get_elapsed_time))
+        .with_state(timekeeper)
 }
