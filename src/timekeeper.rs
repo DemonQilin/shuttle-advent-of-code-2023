@@ -6,9 +6,11 @@ use std::{
 
 use axum::{
     extract::{Path, State},
+    response,
     routing::{get, post},
     Json, Router,
 };
+use chrono::{prelude::*, LocalResult};
 use reqwest::StatusCode;
 use serde::Serialize;
 use ulid::Ulid;
@@ -58,6 +60,54 @@ async fn convert_ulids_to_uuids(Json(ulids): Json<Vec<Ulid>>) -> Json<Vec<Uuid>>
     Json(uuids)
 }
 
+async fn analize_ulids(
+    Path(weekday): Path<u8>,
+    Json(ulids): Json<Vec<Ulid>>,
+) -> response::Result<Json<UlidAnalysis>> {
+    let dates = ulids
+        .iter()
+        .map(
+            |ulid| match Utc.timestamp_millis_opt(ulid.timestamp_ms() as i64) {
+                LocalResult::Single(date) => Ok(date),
+                _ => Err(format!(
+                    "The ulid \"{}\" could not be converted to a valid utc date",
+                    ulid.to_string()
+                )),
+            },
+        )
+        .collect::<Result<Vec<_>, _>>()?;
+
+    let christmas = dates
+        .iter()
+        .filter(|date| date.day() == 24 && date.month() == 12)
+        .count();
+
+    let weekday = dates
+        .iter()
+        .filter(|date| date.weekday().num_days_from_monday() == weekday as u32)
+        .count();
+
+    let current_date = Utc::now();
+    let future = dates
+        .iter()
+        .filter(move |date| **date > current_date)
+        .count();
+
+    let lsb = ulids
+        .into_iter()
+        .filter(|ulid| ulid.random() % 2 != 0)
+        .count();
+
+    let analysis = UlidAnalysis {
+        christmas,
+        weekday,
+        future,
+        lsb,
+    };
+
+    Ok(Json(analysis))
+}
+
 pub fn make_timekeeper_api() -> Router {
     let timekeeper: Timekeeper = Arc::new(Mutex::new(HashMap::new()));
 
@@ -65,5 +115,6 @@ pub fn make_timekeeper_api() -> Router {
         .route("/save/:packet_key", post(save_packet))
         .route("/load/:packet_key", get(get_elapsed_time))
         .route("/ulids", post(convert_ulids_to_uuids))
+        .route("/ulids/:weekday", post(analize_ulids))
         .with_state(timekeeper)
 }
