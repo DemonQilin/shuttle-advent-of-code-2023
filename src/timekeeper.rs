@@ -10,10 +10,22 @@ use axum::{
     Json, Router,
 };
 use reqwest::StatusCode;
+use serde::Serialize;
 use ulid::Ulid;
 use uuid::Uuid;
 
 type Timekeeper = Arc<Mutex<HashMap<String, Instant>>>;
+
+#[derive(Debug, Serialize)]
+struct UlidAnalysis {
+    #[serde(rename(serialize = "christmas eve"))]
+    christmas: usize,
+    weekday: usize,
+    #[serde(rename(serialize = "in the future"))]
+    future: usize,
+    #[serde(rename(serialize = "LSB is 1"))]
+    lsb: usize,
+}
 
 async fn get_elapsed_time(
     State(timekeeper): State<Timekeeper>,
