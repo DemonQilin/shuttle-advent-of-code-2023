@@ -1,6 +1,8 @@
 use axum::{http::StatusCode, routing::post, Json, Router};
 use serde::{Deserialize, Serialize};
 
+use crate::AppState;
+
 #[derive(Deserialize)]
 struct Reindeer {
     strength: i32,
@@ -94,7 +96,7 @@ async fn get_contest_winners(body: String) -> axum::response::Result<String, Sta
     serde_json::to_string(&winners).map_err(|_| StatusCode::BAD_REQUEST)
 }
 
-pub fn get_reindeer_routes() -> Router {
+pub fn get_reindeer_routes() -> Router<AppState> {
     Router::new()
         .route("/strength", post(get_reideers_total_strength))
         .route("/contest", post(get_contest_winners))

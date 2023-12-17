@@ -2,6 +2,8 @@ use axum::{extract::Multipart, response, routing::post, Router};
 use image::{GenericImageView, ImageError, ImageFormat};
 use tower_http::services::ServeDir;
 
+use crate::AppState;
+
 async fn get_magical_red_pixels_total(mut multipart: Multipart) -> response::Result<String> {
     while let Some(field) = multipart.next_field().await.unwrap() {
         let name = field.name().unwrap();
@@ -39,7 +41,7 @@ async fn get_magical_red_pixels_total(mut multipart: Multipart) -> response::Res
     Err("Field \"recipe\" was not founded".into())
 }
 
-pub fn get_imagery_routes() -> Router {
+pub fn get_imagery_routes() -> Router<AppState> {
     Router::new()
         .route("/red_pixels", post(get_magical_red_pixels_total))
         .nest_service("/assets", ServeDir::new("assets"))

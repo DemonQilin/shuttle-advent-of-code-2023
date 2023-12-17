@@ -1,6 +1,8 @@
 use axum::{extract::Path, http::StatusCode, routing::get, Router};
 use serde::Deserialize;
 
+use crate::AppState;
+
 const GRAVITATIONAL_ACCELERATION: f32 = 9.825;
 
 #[allow(dead_code)]
@@ -98,7 +100,7 @@ async fn get_drop_momentum(Path(pokemon_id): Path<u16>) -> (StatusCode, String) 
     (StatusCode::OK, momentum.to_string())
 }
 
-pub fn get_pokemon_routes() -> Router {
+pub fn get_pokemon_routes() -> Router<AppState> {
     Router::new()
         .route("/weight/:pokemon_id", get(get_pokemon_weight))
         .route("/drop/:pokemon_id", get(get_drop_momentum))

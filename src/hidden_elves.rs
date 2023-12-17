@@ -1,5 +1,7 @@
 use axum::{routing::post, Router};
 
+use crate::AppState;
+
 async fn count_elf_in_input(body: String) -> String {
     let total_elf = body.matches("elf").count();
     let total_shelf = body.matches("shelf").count();
@@ -18,6 +20,6 @@ async fn count_elf_in_input(body: String) -> String {
     )
 }
 
-pub fn get_hidden_elves_routes() -> Router {
+pub fn get_hidden_elves_routes() -> Router<AppState> {
     Router::new().route("/", post(count_elf_in_input))
 }

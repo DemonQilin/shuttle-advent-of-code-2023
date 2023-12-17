@@ -1,8 +1,4 @@
-use std::{
-    collections::HashMap,
-    sync::{Arc, Mutex},
-    time::Instant,
-};
+use std::time::Instant;
 
 use axum::{
     extract::{Path, State},
@@ -16,7 +12,7 @@ use serde::Serialize;
 use ulid::Ulid;
 use uuid::Uuid;
 
-type Timekeeper = Arc<Mutex<HashMap<String, Instant>>>;
+use crate::{models::Timekeeper, AppState};
 
 #[derive(Debug, Serialize)]
 struct UlidAnalysis {
@@ -108,13 +104,10 @@ async fn analize_ulids(
     Ok(Json(analysis))
 }
 
-pub fn make_timekeeper_api() -> Router {
-    let timekeeper: Timekeeper = Arc::new(Mutex::new(HashMap::new()));
-
+pub fn make_timekeeper_api() -> Router<AppState> {
     Router::new()
         .route("/save/:packet_key", post(save_packet))
         .route("/load/:packet_key", get(get_elapsed_time))
         .route("/ulids", post(convert_ulids_to_uuids))
         .route("/ulids/:weekday", post(analize_ulids))
-        .with_state(timekeeper)
 }

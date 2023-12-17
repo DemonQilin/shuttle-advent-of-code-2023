@@ -1,5 +1,7 @@
 use axum::{extract::Path, http::StatusCode, routing::get, Router};
 
+use crate::AppState;
+
 async fn sled_id(Path(packed_ids): Path<String>) -> axum::response::Result<String, StatusCode> {
     let mut packed_ids = packed_ids;
 
@@ -29,6 +31,6 @@ async fn sled_id(Path(packed_ids): Path<String>) -> axum::response::Result<Strin
     Ok(id_sled.to_string())
 }
 
-pub fn get_sled_routes() -> Router {
+pub fn get_sled_routes() -> Router<AppState> {
     Router::new().route("/*packed_ids", get(sled_id))
 }

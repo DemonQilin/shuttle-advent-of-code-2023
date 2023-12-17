@@ -8,6 +8,8 @@ use serde::{Deserialize, Serialize};
 
 use std::collections::HashMap;
 
+use crate::AppState;
+
 #[derive(Debug, Deserialize)]
 struct Order {
     recipe: HashMap<String, u64>,
@@ -114,7 +116,7 @@ async fn get_baked_cookies(
     Ok(Json(remain))
 }
 
-pub fn get_cookies_recipe_routes() -> Router {
+pub fn get_cookies_recipe_routes() -> Router<AppState> {
     Router::new()
         .route("/decode", get(get_encoded_cookies_recipe))
         .route("/bake", get(get_baked_cookies))
