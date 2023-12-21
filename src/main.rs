@@ -9,6 +9,7 @@ use cch23_demonqilin01::{
     get_cookies_recipe_routes, get_hidden_elves_routes, get_imagery_routes, get_pokemon_routes,
     get_reindeer_routes, get_sled_routes, make_timekeeper_api, AppState,
 };
+use sqlx::PgPool;
 
 async fn hello_world() -> &'static str {
     "Hello, world!"
@@ -19,8 +20,9 @@ async fn fake_error() -> StatusCode {
 }
 
 #[shuttle_runtime::main]
-async fn main() -> shuttle_axum::ShuttleAxum {
+async fn main(#[shuttle_shared_db::Postgres] pool: PgPool) -> shuttle_axum::ShuttleAxum {
     let state = AppState {
+        pool,
         timekeeper: Arc::new(Mutex::new(HashMap::new())),
     };
 
